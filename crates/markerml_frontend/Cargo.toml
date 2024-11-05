@@ -1,0 +1,13 @@
+[package]
+name = "markerml_frontend"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ruslan Omelchuk"]
+description = "Frontend of simple markup and templating language, that is transpiled to HTML."
+license = "MIT"
+categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
+
+[dependencies]
+unicode-xid = "0.2.6"
+enum-display-derive = "0.1.1"
+chumsky = "0.9.3"

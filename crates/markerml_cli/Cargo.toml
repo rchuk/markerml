@@ -1,0 +1,11 @@
+[package]
+name = "markerml_cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ruslan Omelchuk"]
+description = "Cli for simple markup and templating language, that is transpiled to HTML."
+license = "MIT"
+categories = ["command-line-utilities", "parser-implementations", "web-programming", "template-engine", "compilers"]
+
+[dependencies]
+markerml_frontend = { path = "../markerml_frontend" }
