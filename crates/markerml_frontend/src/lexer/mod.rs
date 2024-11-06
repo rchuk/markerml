@@ -55,8 +55,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_interpolation_start(&mut self, kind: InterpolationKind, _ch: char, mut add_token: impl FnMut(&Self, TokenKind)) {
-        // FIXME: Breaks positions
         add_token(self, Punctuator::Dollar.into());
+        self.skip();
         add_token(self, Punctuator::LeftCurlyBracket.into());
 
         self.interpolation_mode.pop();
@@ -231,7 +231,7 @@ impl<'a> Lexer<'a> {
                     text.push(ch);
                 },
                 '$' => {
-                    if self.consume_if_eq('{').is_some() {
+                    if let Some('{') = self.peek() {
                         self.interpolation_mode.push(InterpolationMode::Start(interpolation_kind));
                         return (text, true);
                     } else {
@@ -1004,7 +1004,7 @@ paragraph(${
     }
 
     #[test]
-    fn text_interpolated() {
+    fn text_interpolated_multiline() {
         let code = r#"
             paragraph(User first name is ${user_first_name}
                 and the last name is ${user_last_name}

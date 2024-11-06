@@ -117,25 +117,24 @@ fn properties() -> impl Parser<TokenKind, ast::Properties, Error = ParserError> 
         .then_ignore(punctuator(token::Punctuator::Equals))
         .then(value())
         .map(|(key, value)| ast::Property::KeyValue { key, value });
-    let named_property = || key_value_property()
-        .or(flag_property());
+    let named_property = || key_value_property().or(flag_property());
     let named_properties = || named_property()
         .separated_by(punctuator(token::Punctuator::Comma))
         .at_least(1)
         .allow_trailing();
 
-    named_properties().map(|properties| ast::Properties { default: None, properties })
-        .or(
-            default_property()
-                .then_ignore(punctuator(token::Punctuator::Comma))
-                .then(named_properties())
-                .map(|(default, properties)| ast::Properties { default: Some(default), properties })
-        )
-        .or(default_property().map(|default| ast::Properties { default: Some(default), properties: Vec::new() }))
-        .delimited_by(
-            punctuator(token::Punctuator::LeftSquareBracket),
-            punctuator(token::Punctuator::RightSquareBracket)
-        )
+    choice((
+        named_properties().map(|properties| ast::Properties { default: None, properties }),
+        default_property()
+            .then_ignore(punctuator(token::Punctuator::Comma))
+            .then(named_properties())
+            .map(|(default, properties)| ast::Properties { default: Some(default), properties }),
+        default_property().map(|default| ast::Properties { default: Some(default), properties: Vec::new() })
+    ))
+    .delimited_by(
+        punctuator(token::Punctuator::LeftSquareBracket),
+        punctuator(token::Punctuator::RightSquareBracket)
+    )
 }
 
 fn value() -> impl Parser<TokenKind, ast::Value, Error = ParserError> {
