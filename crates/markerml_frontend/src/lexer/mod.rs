@@ -55,6 +55,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_interpolation_start(&mut self, kind: InterpolationKind, _ch: char, mut add_token: impl FnMut(&Self, TokenKind)) {
+        // FIXME: Breaks positions
         add_token(self, Punctuator::Dollar.into());
         add_token(self, Punctuator::LeftCurlyBracket.into());
 
@@ -252,8 +253,7 @@ impl<'a> Lexer<'a> {
         }
 
         let delimiter = match self.interpolation_mode.last() {
-            Some(InterpolationMode::Interpolation(InterpolationKind::String)) => Some('"'),
-            Some(InterpolationMode::Interpolation(InterpolationKind::Text)) => Some(')'),
+            Some(InterpolationMode::Interpolation(_)) => Some('}'),
             _ => None
         };
 
@@ -785,7 +785,7 @@ mod tests {
     #[test]
     fn code_spans_simple() {
         let code = "123456789 hello  component";
-        let result = vec![
+        let res = vec![
             (IntegerLiteral(123456789).into(), Span {
                 start: Position { line: 1, column: 1 },
                 end: Position { line: 1, column: 10 }
@@ -800,7 +800,7 @@ mod tests {
             })
         ];
 
-        assert_eq!(lex_with_spans(code), result);
+        assert_eq!(lex_with_spans(code), res);
     }
 
     #[test]
@@ -812,7 +812,7 @@ hello world $
  42
         "#;
 
-        let result = vec![
+        let res = vec![
             (IntegerLiteral(123).into(), Span {
                 start: Position { line: 2, column: 1 },
                 end: Position { line: 2, column: 4 }
@@ -835,11 +835,208 @@ hello world $
             }),
         ];
 
-        assert_eq!(lex_with_spans(code), result);
+        assert_eq!(lex_with_spans(code), res);
+    }
+
+    #[test]
+    fn comments() {
+        let code = r#"
+            // Comment
+            123 //
+            // Some comment
+            // blah blah
+            456
+            //
+            // Other comment
+            // 666
+            789 // Cool number!
+        "#;
+        let res = vec![
+            IntegerLiteral(123),
+            IntegerLiteral(456),
+            IntegerLiteral(789)
+        ];
+
+        assert_eq!(lex(code), to_tokens(res))
+    }
+
+    #[test]
+    fn code_spans_string_interpolation() {
+        let code = r#"
+paragraph(${
+    user
+} is)"
+        "#;
+        let res = vec![
+            (Identifier::new("paragraph").into(), Span {
+                start: Position { line: 2, column: 1 },
+                end: Position { line: 2, column: 10 }
+            }),
+            (
+                Text {
+                    content: "".to_owned(),
+                    is_closed: true
+                }.into(),
+                Span {
+                    start: Position { line: 2, column: 10 },
+                    end: Position { line: 2, column: 11 }
+                }
+            ),
+            (Punctuator::Dollar.into(), Span {
+                start: Position { line: 2, column: 11 },
+                end: Position { line: 2, column: 12 }
+            }),
+            (Punctuator::LeftCurlyBracket.into(), Span {
+                start: Position { line: 2, column: 12 },
+                end: Position { line: 2, column: 13 }
+            }),
+            (Identifier::new("user").into(), Span {
+                start: Position { line: 3, column: 5 },
+                end: Position { line: 3, column: 9 }
+            }),
+            (Punctuator::RightCurlyBracket.into(), Span {
+                start: Position { line: 4, column: 1 },
+                end: Position { line: 4, column: 2 }
+            }),
+            (
+                Text {
+                    content: " is".to_owned(),
+                    is_closed: true
+                }.into(),
+                Span {
+                    start: Position { line: 4, column: 2 },
+                    end: Position { line: 4, column: 6 }
+                }
+            ),
+        ];
+
+        assert_eq!(lex_with_spans(code), res);
+    }
+
+    #[test]
+    fn comments_in_string_interpolation() {
+        let code = r#"
+            // Comment
+            "${user_age //cool variable}" //comment
+            // comment
+        "#;
+        let res = vec![
+            StringLiteral {
+                content: "".to_owned(),
+                is_closed: true
+            }.into(),
+            Punctuator::Dollar.into(),
+            Punctuator::LeftCurlyBracket.into(),
+            Identifier::new("user_age").into(),
+            Punctuator::RightCurlyBracket.into(),
+            StringLiteral {
+                content: "".to_owned(),
+                is_closed: true
+            }.into()
+        ];
+
+        assert_eq!(lex(code), res)
+    }
+
+    #[test]
+    fn comments_in_string_interpolation_multiline() {
+        let code = r#"
+            // Comment
+            "${user_age //cool variable
+
+            // comment
+            something
+            }" //comment
+            // comment
+        "#;
+        let res = vec![
+            StringLiteral {
+                content: "".to_owned(),
+                is_closed: true
+            }.into(),
+            Punctuator::Dollar.into(),
+            Punctuator::LeftCurlyBracket.into(),
+            Identifier::new("user_age").into(),
+            Identifier::new("something").into(),
+            Punctuator::RightCurlyBracket.into(),
+            StringLiteral {
+                content: "".to_owned(),
+                is_closed: true
+            }.into()
+        ];
+
+        assert_eq!(lex(code), res)
+    }
+
+    #[test]
+    fn text() {
+        let code = r#"
+            box(Hello world  )
+        "#;
+        let res = vec![
+            Identifier::new("box").into(),
+            Text {
+                content: "Hello world  ".to_owned(),
+                is_closed: true,
+            }.into()
+        ];
+
+        assert_eq!(lex(code), res);
+    }
+
+    #[test]
+    fn text_multiline() {
+        let code = r#"
+            paragraph(Hello
+
+            world
+            )
+        "#;
+        let res = vec![
+            Identifier::new("paragraph").into(),
+            Text {
+                content: "Hello world".to_owned(),
+                is_closed: true,
+            }.into()
+        ];
+
+        assert_eq!(lex(code), res);
+    }
+
+    #[test]
+    fn text_interpolated() {
+        let code = r#"
+            paragraph(User first name is ${user_first_name}
+                and the last name is ${user_last_name}
+            )
+        "#;
+        let res = vec![
+            Identifier::new("paragraph").into(),
+            Text {
+                content: "User first name is ".to_owned(),
+                is_closed: true
+            }.into(),
+            Punctuator::Dollar.into(),
+            Punctuator::LeftCurlyBracket.into(),
+            Identifier::new("user_first_name").into(),
+            Punctuator::RightCurlyBracket.into(),
+            Text {
+                content: " and the last name is ".to_owned(),
+                is_closed: true
+            }.into(),
+            Punctuator::Dollar.into(),
+            Punctuator::LeftCurlyBracket.into(),
+            Identifier::new("user_last_name").into(),
+            Punctuator::RightCurlyBracket.into(),
+            Text {
+                content: "".to_owned(),
+                is_closed: true
+            }.into()
+        ];
+
+        assert_eq!(lex(code), res);
     }
 }
 
-// TODO: Text
-// TODO: Comments. Comments inside interpolation
-// TODO: Escapes for $ or ) or "
-// TODO: Code spans. Code spans inside interpolation
+// TODO: Fix a couple of failing tests related to text
+// TODO: Test escapes for '$', ')' and '"'
