@@ -13,9 +13,10 @@ Lexer is written from scratch, while parser uses [chumsky](https://crates.io/cra
 
 Development is split into a couple of stages:
 1. Basic syntax parsing
-2. Support for builtin components and emitting HTML
-3. Live reloading
-4. Custom components definitions
+2. Intermediate Representation and support for builtin components
+3. Emitting HTML
+4. Live reloading
+5. Custom components definitions
 
 ## Examples
 
@@ -340,10 +341,12 @@ graph LR;
     component_keyword --> identifier
     
     %% identifier
-    identifier --> properties_definition
     identifier --> children
+    identifier --> properties_definition
+  
     
     %% properties definition
+    properties_definition --> children
     properties_definition --> END
     
     %% 
@@ -365,7 +368,6 @@ graph LR;
     open(("["))
     close(("]"))
     comma((","))
-    default_property_value
     subgraph property 
         property_start(( ))
         property_end(( ))
@@ -383,12 +385,7 @@ graph LR;
     %% open
     START --> open
     open --> property_start
-    open --> default_property_value
     open --> close
-    
-    %% default property value
-    default_property_value --> close
-    default_property_value --> comma
     
     %% property
     property_start --> default_keyword
