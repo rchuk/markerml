@@ -91,7 +91,7 @@ component some_component[
     children: slot[]
 ] {
     box[horizontal] {
-        @(${a})
+        @(${a //comments can also be used inside string interpolation})
         @(${b})
         list {
             ${children}
@@ -149,6 +149,11 @@ Properties:
 - `text content`
 
 ## Grammar
+
+> **TODO: Fix**
+> 
+> Note that there are some problems with how
+> GitHub renders mermaid diagrams
 
 ### Component instantiation
 
@@ -697,3 +702,5 @@ graph LR;
 ### Miscellaneous
 
 #### Comment
+
+**TODO**
