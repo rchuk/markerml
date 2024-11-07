@@ -25,7 +25,7 @@ pub mod common;
 ///         println!("Parse error: {}. At line {} column {}", err, err.span().start.line, err.span().start.column);
 ///     }
 /// ```
-pub fn parse(code: impl AsRef<str>) -> (Option<ast::Module>, Vec<parser::ParserError>) {
+pub fn parse(code: impl AsRef<str>) -> (Option<ast::Module<common::span::Span>>, Vec<parser::ParserError>) {
     use chumsky::{Stream, Parser};
 
     let (tokens, eof) = lexer::Lexer::new(&code).lex();
@@ -42,9 +42,15 @@ pub fn parse(code: impl AsRef<str>) -> (Option<ast::Module>, Vec<parser::ParserE
 #[cfg(test)]
 mod test {
     use crate::ast::*;
+    use crate::common::span::{Position, Span};
 
-    fn parse(code: &str) -> Option<Module> {
+    fn parse(code: &str) -> Option<Module<Span>> {
         super::parse(&code).0
+    }
+
+    fn parse_no_spans(code: &str) -> Option<Module<()>> {
+        parse(&code)
+            .map(|module| module.map_span(|_| ()))
     }
 
     #[test]
@@ -55,15 +61,17 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("box"),
+                    name: Identifier::from_literal("box"),
                     properties: None,
                     children: None,
-                    text: None
+                    text: None,
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -74,20 +82,25 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("box"),
+                    name: Identifier::from_literal("box"),
                     properties: Some(Properties {
                         default: None,
                         properties: vec![
-                            Property::Flag { key: Identifier::new("vertical") }
-                        ]
+                            PropertyKind::Flag {
+                                key: Identifier::from_literal("vertical")
+                            }.into()
+                        ],
+                        span: Default::default()
                     }),
                     children: None,
-                    text: None
+                    text: None,
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -100,27 +113,30 @@ mod test {
             }
         "#;
         let paragraph = Component {
-            name: Identifier::new("paragraph"),
+            name: Identifier::from_literal("paragraph"),
             properties: None,
             children: None,
-            text: None
+            text: None,
+            span: Default::default()
         };
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("box"),
+                    name: Identifier::from_literal("box"),
                     properties: None,
                     children: Some(vec![
                         paragraph.clone(),
                         paragraph.clone(),
                         paragraph
                     ]),
-                    text: None
+                    text: None,
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -131,15 +147,17 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("paragraph"),
+                    name: Identifier::from_literal("paragraph"),
                     properties: None,
                     children: None,
-                    text: Some(Text::from_literal("Hello world!"))
+                    text: Some(Text::from_literal("Hello world!")),
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -152,31 +170,34 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("box"),
+                    name: Identifier::from_literal("box"),
                     properties: Some(Properties {
                         default: None,
                         properties: vec![
-                            Property::KeyValue {
-                                key: Identifier::new("prop_a"),
-                                value: StringValue::from_literal("hello").into()
-                            },
-                            Property::KeyValue {
-                                key: Identifier::new("prop_b"),
-                                value: StringValue::from_literal("world").into()
-                            },
-                            Property::KeyValue {
-                                key: Identifier::new("prop_c"),
-                                value: Value::Bool(false)
-                            }
-                        ]
+                            PropertyKind::KeyValue {
+                                key: Identifier::from_literal("prop_a"),
+                                value: ValueKind::String(StringValue::from_literal("hello")).into()
+                            }.into(),
+                            PropertyKind::KeyValue {
+                                key: Identifier::from_literal("prop_b"),
+                                value: ValueKind::String(StringValue::from_literal("world")).into()
+                            }.into(),
+                            PropertyKind::KeyValue {
+                                key: Identifier::from_literal("prop_c"),
+                                value: ValueKind::Bool(false).into(),
+                            }.into()
+                        ],
+                        span: Default::default()
                     }),
                     children: Some(Vec::new()),
-                    text: None
+                    text: None,
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -197,40 +218,48 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("box"),
+                    name: Identifier::from_literal("box"),
                     properties: None,
                     children: Some(vec![
                         Component {
-                            name: Identifier::new("box"),
+                            name: Identifier::from_literal("box"),
                             properties: None,
                             children: Some(vec![
                                 Component {
-                                    name: Identifier::new("box"),
+                                    name: Identifier::from_literal("box"),
                                     properties: Some(Properties {
                                         default: None,
                                         properties: vec![
-                                            Property::Flag { key: Identifier::new("horizontal") }
-                                        ]
+                                            PropertyKind::Flag {
+                                                key: Identifier::from_literal("horizontal")
+                                            }.into()
+                                        ],
+                                        span: Default::default()
                                     }),
                                     children: Some(Vec::new()),
-                                    text: None
+                                    text: None,
+                                    span: Default::default()
                                 }
                             ]),
-                            text: None
+                            text: None,
+                            span: Default::default()
                         },
                         Component {
-                            name: Identifier::new("box"),
+                            name: Identifier::from_literal("box"),
                             properties: None,
                             children: Some(Vec::new()),
-                            text: None
+                            text: None,
+                            span: Default::default()
                         },
                     ]),
-                    text: None
+                    text: None,
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -241,18 +270,21 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("#"),
+                    name: Identifier::from_literal("#"),
                     properties: Some(Properties {
-                        default: Some(StringValue::from_literal("google.com").into()),
-                        properties: Vec::new()
+                        default: Some(ValueKind::String(StringValue::from_literal("google.com")).into()),
+                        properties: Vec::new(),
+                        span: Default::default()
                     }),
                     children: None,
-                    text: Some(Text::from_literal("google"))
+                    text: Some(Text::from_literal("google")),
+                    span: Default::default()
                 }.into()
-            ]
+            ],
+            span: Default::default()
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse_no_spans(code), Some(res));
     }
 
     #[test]
@@ -264,26 +296,87 @@ mod test {
         let res = Module {
             items: vec![
                 Component {
-                    name: Identifier::new("@"),
+                    name: Identifier::from_literal("@"),
                     properties: Some(Properties {
                         default: None,
                         properties: vec![
-                            Property::Flag { key: Identifier::new("bold") }
-                        ]
+                            PropertyKind::Flag {
+                                key: Identifier::from_literal("bold")
+                            }.into()
+                        ],
+                        span: Default::default()
                     }),
                     children: None,
-                    text: Some(Text::from_literal("Hello, world!"))
+                    text: Some(Text::from_literal("Hello, world!")),
+                    span: Default::default()
                 }.into(),
                 Component {
-                    name: Identifier::new("@"),
+                    name: Identifier::from_literal("@"),
                     properties: None,
                     children: None,
-                    text: Some(Text::from_literal(" wow "))
+                    text: Some(Text::from_literal(" wow ")),
+                    span: Default::default()
+                }.into()
+            ],
+            span: Default::default()
+        };
+
+        assert_eq!(parse_no_spans(code), Some(res));
+    }
+
+    #[test]
+    fn span_component_simple() {
+        let code = r#"
+box[vertical] {
+
+}
+        "#;
+        let res = Module {
+            span: Span {
+                start: Position { line: 2, column: 1 },
+                end: Position { line: 4, column: 2 }
+            },
+            items: vec![
+                Component {
+                    span: Span {
+                        start: Position { line: 2, column: 1 },
+                        end: Position { line: 4, column: 2 }
+                    },
+                    name: Identifier {
+                        span: Span {
+                            start: Position { line: 2, column: 1 },
+                            end: Position { line: 2, column: 4 },
+                        },
+                        name: "box".to_owned()
+                    },
+                    properties: Some(Properties {
+                        span: Span {
+                            start: Position { line: 2, column: 4 },
+                            end: Position { line: 2, column: 14 }
+                        },
+                        default: None,
+                        properties: vec![
+                            PropertyKind::Flag {
+                                key: Identifier {
+                                    span: Span {
+                                        start: Position { line: 2, column: 5 },
+                                        end: Position { line: 2, column: 13 }
+                                    },
+                                    name: "vertical".to_owned()
+                                }
+                            }.spanned(Span {
+                                start: Position { line: 2, column: 5 },
+                                end: Position { line: 2, column: 13 }
+                            })
+                        ]
+                    }),
+                    children: Some(Vec::new()),
+                    text: None
                 }.into()
             ]
         };
 
-        assert_eq!(parse(code), Some(res));
+        assert_eq!(parse(code), Some(res))
     }
 }
 
