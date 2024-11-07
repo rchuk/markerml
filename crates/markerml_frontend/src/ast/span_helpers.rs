@@ -35,9 +35,7 @@ impl<SpanT> Component<SpanT> {
             span: f(self.span),
             name: self.name.map_span(f),
             properties: self.properties.map(|props| props.map_span(f)),
-            children: self.children.map(|children| {
-                children.into_iter().map(|child| child.map_span(f)).collect()
-            }),
+            children: self.children.map(|children| children.map_span(f)),
             text: self.text.map(|text| text.map_span(f)),
         }
     }
@@ -118,9 +116,19 @@ impl<SpanT> ComponentDefinition<SpanT> {
             span: f(self.span),
             name: self.name.map_span(f),
             properties: self.properties.map(|props| props.map_span(f)),
-            children: self.children.map(|children| {
-                children.into_iter().map(|child| child.map_span(f)).collect()
-            }),
+            children: self.children.map(|children| children.map_span(f))
+        }
+    }
+}
+
+impl<SpanT> ComponentChildren<SpanT> {
+    fn map_span<F, NewSpanT>(self, f: &mut F) -> ComponentChildren<NewSpanT>
+    where
+        F: FnMut(SpanT) -> NewSpanT,
+    {
+        ComponentChildren {
+            span: f(self.span),
+            children: self.children.into_iter().map(|child| child.map_span(f)).collect()
         }
     }
 }

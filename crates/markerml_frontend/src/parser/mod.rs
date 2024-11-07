@@ -31,6 +31,9 @@ fn component_definition() -> impl Parser<TokenKind, ast::ComponentDefinition<Spa
                     punctuator(token::Punctuator::LeftCurlyBracket),
                     punctuator(token::Punctuator::RightCurlyBracket)
                 )
+                .map_with_span(|children, span| {
+                    ast::ComponentChildren { span, children }
+                })
                 .or_not()
         )
         .map_with_span(|((name, properties), children), span| {
@@ -121,6 +124,9 @@ fn component() -> impl Parser<TokenKind, ast::Component<Span>, Error = ParserErr
                         punctuator(token::Punctuator::LeftCurlyBracket),
                         punctuator(token::Punctuator::RightCurlyBracket)
                     )
+                    .map_with_span(|children, span| {
+                        ast::ComponentChildren { span, children }
+                    })
                     .or_not()
             )
             .map_with_span(|(((name, properties), text), children), span| {

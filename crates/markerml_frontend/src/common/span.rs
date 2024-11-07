@@ -38,6 +38,22 @@ impl chumsky::Span for Span {
     }
 }
 
+impl Span {
+    pub fn to_miette_span(&self, code: impl AsRef<str>) -> miette::SourceSpan {
+        let start = self.start.to_miette_offset(code.as_ref());
+        let end = self.end.to_miette_offset(code.as_ref());
+        let length = (end.offset() - start.offset()).into();
+
+        miette::SourceSpan::new(start, length)
+    }
+}
+
+impl Position {
+    pub fn to_miette_offset(&self, code: impl AsRef<str>) -> miette::SourceOffset {
+        miette::SourceOffset::from_location(code, self.line as usize, self.column as usize)
+    }
+}
+
 impl BitOr<Span> for Span {
     type Output = Span;
 

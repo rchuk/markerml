@@ -17,7 +17,7 @@ pub struct Component<SpanT> {
     pub span: SpanT,
     pub name: Identifier<SpanT>,
     pub properties: Option<Properties<SpanT>>,
-    pub children: Option<Vec<Component<SpanT>>>,
+    pub children: Option<ComponentChildren<SpanT>>,
     pub text: Option<Text<SpanT>>
 }
 
@@ -59,7 +59,13 @@ pub struct ComponentDefinition<SpanT> {
     pub span: SpanT,
     pub name: Identifier<SpanT>,
     pub properties: Option<PropertiesDefinition<SpanT>>,
-    pub children: Option<Vec<Component<SpanT>>>
+    pub children: Option<ComponentChildren<SpanT>>
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComponentChildren<SpanT> {
+    pub span: SpanT,
+    pub children: Vec<Component<SpanT>>
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +123,7 @@ pub enum InterpolationSegmentKind<SpanT> {
     Variable(Identifier<SpanT>)
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Identifier<SpanT> {
     pub span: SpanT,
     pub name: String

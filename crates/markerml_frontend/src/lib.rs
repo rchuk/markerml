@@ -1,3 +1,5 @@
+pub mod parse_error;
+pub mod validator;
 pub mod parser;
 pub mod ast;
 pub mod lexer;
@@ -19,42 +21,53 @@ pub mod common;
 ///       }
 ///     "#;
 ///
-///     let (module, errors) = markerml_frontend::parse(&code);
+///     let module = markerml_frontend::parse(&code)?;
 ///     println!("Module: {:#?}", module);
-///     for err in errors {
-///         println!("Parse error: {}. At line {} column {}", err, err.span().start.line, err.span().start.column);
-///     }
 /// ```
-pub fn parse(code: impl AsRef<str>) -> (Option<ast::Module<common::span::Span>>, Vec<parser::ParserError>) {
+pub fn parse(code: impl AsRef<str>) -> Result<ast::Module<common::span::Span>, parse_error::ParseError> {
+    use std::sync::Arc;
     use chumsky::{Stream, Parser};
+
+    // TODO: Properly manage code
+    let code = Arc::from(code.as_ref());
 
     let (tokens, eof) = lexer::Lexer::new(&code).lex();
     let parser = parser::parser();
     let stream = Stream::from_iter(eof, tokens.into_iter());
-    parser.parse_recovery(stream)
+    let (ast, parser_errors) = parser.parse_recovery(stream);
+    if !parser_errors.is_empty() {
+        // TODO: Properly create and handle parser errors
+        return Err(parse_error::ParseError::ParserError(parser_errors));
+    }
+    if let Some(ast) = ast {
+        let validator = validator::Validator::new(code.clone(), &ast);
+        validator.validate()?;
 
-    // TODO: Check some language invariants in additional pass
-    //  for example: single text property, single default property, no children in text component, etc.
-    //
-    // TODO: Implement better error handling. Use miette crate
+        return Ok(ast)
+    }
+
+    Err(parse_error::ParseError::ParserError(parser_errors))
 }
 
 #[cfg(test)]
 mod test {
     use crate::ast::*;
     use crate::common::span::{Position, Span};
+    use anyhow::Result;
 
-    fn parse(code: &str) -> Option<Module<Span>> {
-        super::parse(&code).0
+    fn parse(code: &str) -> Result<Module<Span>> {
+        let module = super::parse(&code)?;
+
+        Ok(module)
     }
 
-    fn parse_no_spans(code: &str) -> Option<Module<()>> {
+    fn parse_no_spans(code: &str) -> Result<Module<()>> {
         parse(&code)
             .map(|module| module.map_span(|_| ()))
     }
 
     #[test]
-    fn component_simple() {
+    fn component_simple() -> Result<()> {
         let code = r#"
             box
         "#;
@@ -71,11 +84,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn component_with_flag_property() {
+    fn component_with_flag_property() -> Result<()> {
         let code = r#"
             box[vertical]
         "#;
@@ -100,11 +115,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn component_with_children() {
+    fn component_with_children() -> Result<()> {
         let code = r#"
             box {
                 paragraph
@@ -124,11 +141,14 @@ mod test {
                 Component {
                     name: Identifier::from_literal("box"),
                     properties: None,
-                    children: Some(vec![
-                        paragraph.clone(),
-                        paragraph.clone(),
-                        paragraph
-                    ]),
+                    children: Some(ComponentChildren {
+                        children: vec![
+                            paragraph.clone(),
+                            paragraph.clone(),
+                            paragraph
+                        ],
+                        span: Default::default()
+                    }),
                     text: None,
                     span: Default::default()
                 }.into()
@@ -136,11 +156,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn component_with_text() {
+    fn component_with_text() -> Result<()> {
         let code = r#"
             paragraph(Hello world!)
         "#;
@@ -157,11 +179,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn component_with_named_properties() {
+    fn component_with_named_properties() -> Result<()> {
         let code = r#"
             box[prop_a = "hello", prop_b="world", prop_c=false] {
 
@@ -189,7 +213,10 @@ mod test {
                         ],
                         span: Default::default()
                     }),
-                    children: Some(Vec::new()),
+                    children: Some(ComponentChildren {
+                        children: Vec::new(),
+                        span: Default::default()
+                    }),
                     text: None,
                     span: Default::default()
                 }.into()
@@ -197,11 +224,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn component_with_nested_children() {
+    fn component_with_nested_children() -> Result<()> {
         let code = r#"
             box {
                 box {
@@ -220,38 +249,50 @@ mod test {
                 Component {
                     name: Identifier::from_literal("box"),
                     properties: None,
-                    children: Some(vec![
-                        Component {
-                            name: Identifier::from_literal("box"),
-                            properties: None,
-                            children: Some(vec![
-                                Component {
-                                    name: Identifier::from_literal("box"),
-                                    properties: Some(Properties {
-                                        default: None,
-                                        properties: vec![
-                                            PropertyKind::Flag {
-                                                key: Identifier::from_literal("horizontal")
-                                            }.into()
-                                        ],
-                                        span: Default::default()
-                                    }),
-                                    children: Some(Vec::new()),
-                                    text: None,
+                    children: Some(ComponentChildren {
+                        children: vec![
+                            Component {
+                                name: Identifier::from_literal("box"),
+                                properties: None,
+                                children: Some(ComponentChildren {
+                                    children: vec![
+                                        Component {
+                                            name: Identifier::from_literal("box"),
+                                            properties: Some(Properties {
+                                                default: None,
+                                                properties: vec![
+                                                    PropertyKind::Flag {
+                                                        key: Identifier::from_literal("horizontal")
+                                                    }.into()
+                                                ],
+                                                span: Default::default()
+                                            }),
+                                            children: Some(ComponentChildren {
+                                                children: Vec::new(),
+                                                span: Default::default()
+                                            }),
+                                            text: None,
+                                            span: Default::default()
+                                        }
+                                    ],
                                     span: Default::default()
-                                }
-                            ]),
-                            text: None,
-                            span: Default::default()
-                        },
-                        Component {
-                            name: Identifier::from_literal("box"),
-                            properties: None,
-                            children: Some(Vec::new()),
-                            text: None,
-                            span: Default::default()
-                        },
-                    ]),
+                                }),
+                                text: None,
+                                span: Default::default()
+                            },
+                            Component {
+                                name: Identifier::from_literal("box"),
+                                properties: None,
+                                children: Some(ComponentChildren {
+                                    children: Vec::new(),
+                                    span: Default::default()
+                                }),
+                                text: None,
+                                span: Default::default()
+                            },
+                        ],
+                        span: Default::default()
+                    }),
                     text: None,
                     span: Default::default()
                 }.into()
@@ -259,11 +300,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn builtin_link_component() {
+    fn builtin_link_component() -> Result<()> {
         let code = r#"
             #["google.com"](google)
         "#;
@@ -284,11 +327,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn builtin_text_component() {
+    fn builtin_text_component() -> Result<()> {
         let code = r#"
             @[bold](Hello, world!)
             @( wow )
@@ -321,11 +366,13 @@ mod test {
             span: Default::default()
         };
 
-        assert_eq!(parse_no_spans(code), Some(res));
+        assert_eq!(parse_no_spans(code)?, res);
+
+        Ok(())
     }
 
     #[test]
-    fn span_component_simple() {
+    fn span_component_simple() -> Result<()> {
         let code = r#"
 box[vertical] {
 
@@ -370,13 +417,21 @@ box[vertical] {
                             })
                         ]
                     }),
-                    children: Some(Vec::new()),
+                    children: Some(ComponentChildren {
+                        children: Vec::new(),
+                        span: Span {
+                            start: Position { line: 2, column: 15 },
+                            end: Position { line: 4, column: 2 }
+                        }
+                    }),
                     text: None
                 }.into()
             ]
         };
 
-        assert_eq!(parse(code), Some(res))
+        assert_eq!(parse(code)?, res);
+
+        Ok(())
     }
 }
 

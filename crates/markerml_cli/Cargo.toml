@@ -9,3 +9,4 @@ categories = ["command-line-utilities", "parser-implementations", "web-programmi
 
 [dependencies]
 markerml_frontend = { path = "../markerml_frontend" }
+miette = { version = "7.2.0", features = ["fancy"] }
