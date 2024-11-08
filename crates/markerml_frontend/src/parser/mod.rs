@@ -1,13 +1,59 @@
+pub mod parser_error;
+
 use chumsky::prelude::*;
 use chumsky::primitive::Just;
+use chumsky::Stream;
+use itertools::Itertools;
+use miette::LabeledSpan;
 use crate::ast;
 use crate::common::span::Span;
+use crate::parser::parser_error::MultiParserError;
 use crate::token::{self, TokenKind};
+use crate::token::token_human_display::TokenHumanDisplay;
 
 pub type ParserError = Simple<TokenKind, Span>;
 
-/// Returns implementation of chumsky parser for parsing program modules
-pub fn parser() -> impl Parser<TokenKind, ast::Module<Span>, Error = ParserError> {
+
+/// Attempts to parse given stream of tokens into AST
+pub fn parse(code: impl AsRef<str>, tokens: Vec<(TokenKind, Span)>, eof: Span) -> Result<ast::Module<Span>, parser_error::MultiParserError> {
+    let stream = Stream::from_iter(eof, tokens.into_iter());
+    let (ast, parser_errors) = parser().parse_recovery(stream);
+    if !parser_errors.is_empty() {
+        return Err(MultiParserError {
+            related: parser_errors.into_iter().map(|err| map_error(&code, err)).collect()
+        });
+    }
+
+    if let Some(ast) = ast {
+        Ok(ast)
+    } else {
+        Err(MultiParserError {
+            related: parser_errors.into_iter().map(|err| map_error(&code, err)).collect()
+        })
+    }
+
+}
+
+fn map_error(code: impl AsRef<str>, err: ParserError) -> parser_error::ParserError {
+    let span = err.span().to_miette_span(&code);
+    let expected_tokens: Vec<_> = err.expected().flatten().collect();
+    let expected_string = expected_tokens
+        .iter()
+        .map(|token| token.to_human_string())
+        .join(", ");
+    let expected = match expected_tokens.len() {
+        0 => "Unexpected token".to_owned(),
+        1 => "Expected ".to_owned() + &expected_string,
+        _ => "Expected one of: ".to_owned() + &expected_string
+    };
+
+    parser_error::ParserError {
+        label: err.label().unwrap_or("Error"),
+        spans: vec![LabeledSpan::new_with_span(Some(expected), span)]
+    }
+}
+
+fn parser() -> impl Parser<TokenKind, ast::Module<Span>, Error = ParserError> {
     module()
 }
 

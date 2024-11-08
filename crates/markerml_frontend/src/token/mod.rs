@@ -1,3 +1,5 @@
+pub mod token_human_display;
+
 use std::fmt::{Display, Formatter};
 use enum_display_derive::Display;
 

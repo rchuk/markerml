@@ -26,27 +26,16 @@ pub mod common;
 /// ```
 pub fn parse(code: impl AsRef<str>) -> Result<ast::Module<common::span::Span>, parse_error::ParseError> {
     use std::sync::Arc;
-    use chumsky::{Stream, Parser};
 
     // TODO: Properly manage code
     let code = Arc::from(code.as_ref());
 
     let (tokens, eof) = lexer::Lexer::new(&code).lex();
-    let parser = parser::parser();
-    let stream = Stream::from_iter(eof, tokens.into_iter());
-    let (ast, parser_errors) = parser.parse_recovery(stream);
-    if !parser_errors.is_empty() {
-        // TODO: Properly create and handle parser errors
-        return Err(parse_error::ParseError::ParserError(parser_errors));
-    }
-    if let Some(ast) = ast {
-        let validator = validator::Validator::new(code.clone(), &ast);
-        validator.validate()?;
+    let ast = parser::parse(&code, tokens, eof)?;
+    let validator = validator::Validator::new(code.clone(), &ast);
+    validator.validate()?;
 
-        return Ok(ast)
-    }
-
-    Err(parse_error::ParseError::ParserError(parser_errors))
+    Ok(ast)
 }
 
 #[cfg(test)]

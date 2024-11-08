@@ -24,11 +24,9 @@ fn main() -> miette::Result<()> {
     "#;
     */
     let code = r#"
-      component custom[
-        default smth: string,
-        text else,
-        wow: slot[],
-        wow1: slot[]
+      custom[
+        smth: slot,
+        else
       ] {
         header[1](Hello)
         box[horizontal, prop = "hi"] {
@@ -38,14 +36,8 @@ fn main() -> miette::Result<()> {
     "#;
 
     let module = parse(code).map_err(|err| err.with_source_code(code))?;
-
     println!("Module: {:#?}", module);
-    /*
-    match markerml_frontend::parse(&code) {
-        Ok(module) => println!("Module: {:#?}", module),
-        Err(error) => println!("Error: {}", error),
-    };
-    */
+
 
     Ok(())
 }
