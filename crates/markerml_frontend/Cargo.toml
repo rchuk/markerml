@@ -6,6 +6,7 @@ authors = ["Ruslan Omelchuk"]
 description = "Frontend of simple markup and templating language, that is transpiled to HTML."
 license = "MIT"
 categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
+repository = "https://github.com/rchuk/markerml"
 
 [dependencies]
 pest = { version = "2.7.14", features = ["miette-error"] }
