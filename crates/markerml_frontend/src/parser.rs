@@ -286,8 +286,12 @@ fn parse_property_definition(pair: Pair<Rule>) -> Result<PropertyDefinition<Span
 
     let kind = match pair.as_rule() {
         Rule::text_property_definition => {
-            let ident = pair.into_inner().next()
-                .ok_or_else(|| create_error("Missing identifier in text property definition".to_owned(), span))?;
+            let ident = pair.into_inner().next().ok_or_else(|| {
+                create_error(
+                    "Missing identifier in text property definition".to_owned(),
+                    span,
+                )
+            })?;
             let name = parse_identifier(ident)?;
             PropertyDefinitionKind::Text(TextPropertyDefinition { name })
         }
@@ -413,10 +417,14 @@ fn parse_string_interpolation_segment(pair: Pair<Rule>) -> Result<InterpolationS
     let kind = match pair.as_rule() {
         Rule::string_literal_segment => InterpolationSegmentKind::Literal(pair.as_str().to_owned()),
         Rule::variable_interpolation => {
-            let ident = pair.into_inner().next()
-                .ok_or_else(|| create_error("Missing identifier in string interpolation".to_owned(), span))?;
+            let ident = pair.into_inner().next().ok_or_else(|| {
+                create_error(
+                    "Missing identifier in string interpolation".to_owned(),
+                    span,
+                )
+            })?;
             InterpolationSegmentKind::Variable(parse_identifier(ident)?)
-        },
+        }
         Rule::literal_newline => InterpolationSegmentKind::Literal(" ".to_owned()),
         rule => {
             return Err(create_error(
@@ -442,14 +450,13 @@ fn parse_text_interpolation_segment(pair: Pair<Rule>) -> Result<InterpolationSeg
     let kind = match pair.as_rule() {
         Rule::text_literal_segment => InterpolationSegmentKind::Literal(pair.as_str().to_owned()),
         Rule::variable_interpolation => {
-            let ident = pair.into_inner().next()
-                .ok_or_else(|| create_error("Missing identifier in text interpolation".to_owned(), span))?;
+            let ident = pair.into_inner().next().ok_or_else(|| {
+                create_error("Missing identifier in text interpolation".to_owned(), span)
+            })?;
 
             InterpolationSegmentKind::Variable(parse_identifier(ident)?)
-        },
-        Rule::literal_newline => {
-            InterpolationSegmentKind::Literal(" ".to_owned())
         }
+        Rule::literal_newline => InterpolationSegmentKind::Literal(" ".to_owned()),
         rule => {
             return Err(create_error(
                 format!("Unexpected {rule:?} in text interpolation segment"),

@@ -19,32 +19,34 @@ mod test {
     fn whitespace() -> Result<()> {
         let code = r#"   box [ a,  b  ,  c] {   } "#;
         let res = Module {
-            items: vec![
-                Component {
-                    name: Identifier::from_literal("box"),
-                    properties: Some(Properties {
-                        default: None,
-                        properties: vec![
-                            PropertyKind::Flag {
-                                key: Identifier::from_literal("a")
-                            }.into(),
-                            PropertyKind::Flag {
-                                key: Identifier::from_literal("b")
-                            }.into(),
-                            PropertyKind::Flag {
-                                key: Identifier::from_literal("c")
-                            }.into()
-                        ],
-                        span: ()
-                    }),
-                    children: Some(ComponentChildren {
-                        children: vec![],
-                        span: ()
-                    }),
-                    text: None,
+            items: vec![Component {
+                name: Identifier::from_literal("box"),
+                properties: Some(Properties {
+                    default: None,
+                    properties: vec![
+                        PropertyKind::Flag {
+                            key: Identifier::from_literal("a"),
+                        }
+                        .into(),
+                        PropertyKind::Flag {
+                            key: Identifier::from_literal("b"),
+                        }
+                        .into(),
+                        PropertyKind::Flag {
+                            key: Identifier::from_literal("c"),
+                        }
+                        .into(),
+                    ],
                     span: (),
-                }.into()
-            ],
+                }),
+                children: Some(ComponentChildren {
+                    children: vec![],
+                    span: (),
+                }),
+                text: None,
+                span: (),
+            }
+            .into()],
             span: (),
         };
 
@@ -139,35 +141,40 @@ mod test {
                     children: None,
                     text: None,
                     span: (),
-                }.into(),
+                }
+                .into(),
                 Component {
                     name: Identifier::from_literal("_box"),
                     properties: None,
                     children: None,
                     text: None,
                     span: (),
-                }.into(),
+                }
+                .into(),
                 Component {
                     name: Identifier::from_literal("__box"),
                     properties: None,
                     children: None,
                     text: None,
                     span: (),
-                }.into(),
+                }
+                .into(),
                 Component {
                     name: Identifier::from_literal("box1_"),
                     properties: None,
                     children: None,
                     text: None,
                     span: (),
-                }.into(),
+                }
+                .into(),
                 Component {
                     name: Identifier::from_literal("box22"),
                     properties: None,
                     children: None,
                     text: None,
                     span: (),
-                }.into(),
+                }
+                .into(),
             ],
             span: (),
         };
@@ -725,25 +732,28 @@ mod test {
                 name: Identifier::from_literal("box"),
                 properties: Some(Properties {
                     default: None,
-                    properties: vec![
-                        PropertyKind::KeyValue {
-                            key: Identifier::from_literal("a"),
-                            value: StringValue {
-                                segments: vec![
-                                    InterpolationSegmentKind::Literal("Hello, ".to_owned()).spanned(()),
-                                    InterpolationSegmentKind::Variable(Identifier::from_literal("variable")).spanned(()),
-                                ],
-                                span: ()
-                            }.into()
-                        }.into()
-                    ],
-                    span: ()
+                    properties: vec![PropertyKind::KeyValue {
+                        key: Identifier::from_literal("a"),
+                        value: StringValue {
+                            segments: vec![
+                                InterpolationSegmentKind::Literal("Hello, ".to_owned()).spanned(()),
+                                InterpolationSegmentKind::Variable(Identifier::from_literal(
+                                    "variable",
+                                ))
+                                .spanned(()),
+                            ],
+                            span: (),
+                        }
+                        .into(),
+                    }
+                    .into()],
+                    span: (),
                 }),
                 children: None,
                 text: None,
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
@@ -763,14 +773,15 @@ mod test {
                 text: Some(Text {
                     segments: vec![
                         InterpolationSegmentKind::Literal("Hello, ".to_owned()).spanned(()),
-                        InterpolationSegmentKind::Variable(Identifier::from_literal("variable")).spanned(()),
-                        InterpolationSegmentKind::Literal("!".to_owned()).spanned(())
+                        InterpolationSegmentKind::Variable(Identifier::from_literal("variable"))
+                            .spanned(()),
+                        InterpolationSegmentKind::Literal("!".to_owned()).spanned(()),
                     ],
-                    span: ()
+                    span: (),
                 }),
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
@@ -788,11 +799,11 @@ mod test {
                 properties: None,
                 children: Some(ComponentChildren {
                     children: vec![],
-                    span: ()
+                    span: (),
                 }),
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
@@ -810,19 +821,18 @@ mod test {
             items: vec![ComponentDefinition {
                 name: Identifier::from_literal("custom"),
                 properties: Some(PropertiesDefinition {
-                    properties: vec![
-                        PropertyDefinitionKind::Default(NamedPropertyDefinition {
-                            name: Identifier::from_literal("prop"),
-                            ty: TypeKind::String.into(),
-                            default_value: None
-                        }).into()
-                    ],
-                    span: ()
+                    properties: vec![PropertyDefinitionKind::Default(NamedPropertyDefinition {
+                        name: Identifier::from_literal("prop"),
+                        ty: TypeKind::String.into(),
+                        default_value: None,
+                    })
+                    .into()],
+                    span: (),
                 }),
                 children: None,
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
@@ -840,17 +850,16 @@ mod test {
             items: vec![ComponentDefinition {
                 name: Identifier::from_literal("custom"),
                 properties: Some(PropertiesDefinition {
-                    properties: vec![
-                        PropertyDefinitionKind::Text(TextPropertyDefinition {
-                            name: Identifier::from_literal("prop")
-                        }).into()
-                    ],
-                    span: ()
+                    properties: vec![PropertyDefinitionKind::Text(TextPropertyDefinition {
+                        name: Identifier::from_literal("prop"),
+                    })
+                    .into()],
+                    span: (),
                 }),
                 children: None,
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
@@ -873,20 +882,22 @@ mod test {
                         PropertyDefinitionKind::Named(NamedPropertyDefinition {
                             name: Identifier::from_literal("something"),
                             ty: TypeKind::Integer.into(),
-                            default_value: Some(ValueKind::Integer(24).into())
-                        }).into(),
+                            default_value: Some(ValueKind::Integer(24).into()),
+                        })
+                        .into(),
                         PropertyDefinitionKind::Named(NamedPropertyDefinition {
                             name: Identifier::from_literal("else"),
                             ty: TypeKind::String.into(),
-                            default_value: None
-                        }).into()
+                            default_value: None,
+                        })
+                        .into(),
                     ],
-                    span: ()
+                    span: (),
                 }),
                 children: None,
                 span: (),
             }
-                .into()],
+            .into()],
             span: (),
         };
 
