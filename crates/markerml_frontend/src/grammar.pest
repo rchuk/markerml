@@ -1,0 +1,88 @@
+/// Whitespace is a sequence of spaces, tabs, and newlines
+WHITESPACE = _{ (" " | "\t" | NEWLINE)+ }
+/// Comment starts from `"//"` and everything past that to the end of the line is ignored
+COMMENT = _{ "//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+
+/// Integer number of optional `"-"` sign and sequence of digits
+integer = @{ "-"? ~ ASCII_DIGIT+ }
+/// Boolean value: `true` or `false`
+bool = @{ "true" | "false" }
+/// Identifier consists of ascii alphabetic character or underscore,
+/// followed by a sequence of ascii alphanumeric characters or underscores
+identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+/// Newlines inside the strings and text are matched to be replaces with spaces
+literal_newline = @{ NEWLINE ~ (" " | "\t")* }
+/// Segment of string consisting of any characters except quotes
+/// or variable interpolation
+string_literal_segment = @{ (!("$" | "\"" | NEWLINE) ~ ANY)+ }
+/// Segment of text consisting of any characters except quotes
+/// or variable interpolation
+text_literal_segment = @{ (!("$" | ")" | NEWLINE) ~ ANY)+ }
+/// Identifier wrapped in ${} is used as variable interpolation
+variable_interpolation = { "${" ~ identifier ~ "}" }
+
+/// String segment which is literal, variable interpolation or newline that will be replaced with space
+string_segment = ${ literal_newline | variable_interpolation | string_literal_segment }
+/// Text segment which is literal, variable interpolation or newline that will be replaced with space
+text_segment = ${ literal_newline | variable_interpolation | text_literal_segment }
+
+// TODO: Add string (and text) escapes ("$", ")", "\"")
+/// String is a sequence of string segments in quotes
+string = @{ "\"" ~ string_segment* ~ "\"" }
+/// Text is a sequence of text segments in brackets
+text = @{ "(" ~ text_segment* ~ ")" }
+
+/// Value can be one of bool, string, integer or variable interpolation
+value = { variable_interpolation | bool | string | integer }
+
+/// Component name is and identifier or one of the special names: @ for text and # for link
+component_name = { "@" | "#" | identifier }
+
+/// Default property is simply a value
+default_property = { value }
+/// Named property consists of name of a value, followed by equals sign and then a value
+named_property = { identifier ~ "=" ~ value }
+/// Flag property is simply an identifier
+flag_property = { identifier }
+/// Property is named or flag property
+property = { named_property | flag_property }
+/// Represents comma-separated list of named or flag properties
+properties_list = _{ property ~ ("," ~ property)* }
+/// Properties are placed in square brackets and
+/// might contain default property, followed by properties list.
+/// Both are optional
+properties = { "[" ~ (properties_list | (default_property ~ ("," ~ properties_list)?))?  ~ ","? ~ "]" }
+/// Component children is a sequence of components inside curly braces
+children = { "{" ~ component* ~ "}" }
+/// Component must have a name, that is followed by optional
+/// properties, children, and text
+component = { component_name ~ properties? ~ children? ~ text? }
+
+/// There are several basic types such as `string`, `int`, `bool`
+/// and also `slot`, `slot[]` for component composition
+ty = @{ "string" | "int" | "bool" | "slot[]" | "slot" }
+
+/// Default property begins with `default` keyword.
+/// Then it's the same as named property, except it can't have
+/// default value.
+default_property_definition = { "default" ~ identifier ~ ":" ~ ty }
+/// Text property is `text` keyword followed by property name
+text_property_definition = { "text" ~ identifier }
+/// Named property consists of a name, followed by `":"`, property type
+/// and then optionally equals sign with a default value
+named_property_definition = { identifier ~ ":" ~ ty ~ ("=" ~ value)? }
+/// Property definition is either default, text, or named property definition
+property_definition = { default_property_definition | text_property_definition | named_property_definition }
+/// List of comma-separated property definitions
+properties_definition_list = _{ property_definition ~ ("," ~ property_definition)* }
+/// Properties definition consists of optional properties definition list wrapped in square brackets
+properties_definition = { "[" ~ properties_definition_list? ~ "]" }
+/// Component definition begins with `component` keyword. Iy must have a name
+/// followed by optional properties definition and children.
+component_definition = { "component" ~ identifier ~ properties_definition? ~ children? }
+
+/// Module item is component or component definition
+module_item = _{ component_definition | component }
+/// Top-level entity of a program. Contains list of module items
+module = { SOI ~ module_item* ~ EOI}

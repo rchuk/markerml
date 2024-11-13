@@ -1,0 +1,15 @@
+[package]
+name = "markerml_backend"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ruslan Omelchuk"]
+description = "HTML backend of simple markup and templating language, that is transpiled to HTML."
+license = "MIT"
+categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
+
+[dependencies]
+markerml_middleend = { path = "../markerml_middleend", version = "0.1.0" }
+build_html = "2.5.0"
+thiserror = "2.0.3"
+miette = "7.2.0"
+itertools = "0.13.0"

@@ -8,12 +8,10 @@ license = "MIT"
 categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
 
 [dependencies]
-unicode-xid = "0.2.6"
-enum-display-derive = "0.1.1"
-chumsky = "0.9.3"
+pest = { version = "2.7.14", features = ["miette-error"] }
+pest_derive = "2.7.14"
 thiserror = "2.0.0"
 miette = "7.2.0"
-itertools = "0.13.0"
 
 [dev-dependencies]
 anyhow = "1.0.93"

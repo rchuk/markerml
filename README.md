@@ -3,20 +3,22 @@
 ## About
 Simple markup and templating language, that is transpiled to HTML.
 
+Code is split into multiple crates:
+- [markerml_cli]() - CLI for the MarkerMl
+- [markerml]() - top level library create
+- [markerml_backend]() - provides HTML generation
+- [markerml_middleend]() - provides Intermediate Representation
+- [markerml_frontend]() - provides parser 
+
+For complete grammar overview, refer to the [markerml crate]()
+
 ## Features
 **TODO**
 
 ## Development
 
 Project is implemented using Rust.
-Lexer is written from scratch, while parser uses [chumsky](https://crates.io/crates/chumsky) library.
-
-Development is split into a couple of stages:
-1. Basic syntax parsing
-2. Intermediate Representation and support for builtin components
-3. Emitting HTML
-4. Live reloading
-5. Custom components definitions
+Parser is written using [pest](https://crates.io/crates/pest) library.
 
 ## Examples
 
@@ -115,11 +117,6 @@ Name: `@` \
 Properties:
 - `text content`
 
-### Page
-Name: `page` \
-Properties:
-- `title: string`
-
 ### Image
 Name: `image` \
 Properties:
@@ -150,10 +147,6 @@ Properties:
 
 ## Grammar
 
-> **TODO: Fix**
-> 
-> Note that there are some problems with how
-> GitHub renders mermaid diagrams
 
 ### Component instantiation
 

@@ -1,0 +1,17 @@
+box {
+    @(wow!)
+
+    header[6](Hi)
+    box[horizontal, x_align = "end"] {
+        @(this is really cool)
+        #["//google.com"](Google)
+    }
+
+    // image["//picsum.photos/id/18/2500/1667"]
+
+    list[ordered, abc = "a"] {
+        box[x_align = "end"] { @(Wait) }
+        @(What)
+        @(Is that)
+    }
+}

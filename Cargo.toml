@@ -2,5 +2,8 @@
 resolver = "2"
 members = [
     "crates/markerml_cli",
+    "crates/markerml",
+    "crates/markerml_backend",
+    "crates/markerml_middleend",
     "crates/markerml_frontend"
 ]

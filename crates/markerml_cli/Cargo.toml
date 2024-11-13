@@ -3,10 +3,19 @@ name = "markerml_cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ruslan Omelchuk"]
-description = "Cli for simple markup and templating language, that is transpiled to HTML."
+description = "CLI for simple markup and templating language, that is transpiled to HTML."
 license = "MIT"
 categories = ["command-line-utilities", "parser-implementations", "web-programming", "template-engine", "compilers"]
 
 [dependencies]
-markerml_frontend = { path = "../markerml_frontend" }
+markerml = { path = "../markerml", version = "0.1.0" }
 miette = { version = "7.2.0", features = ["fancy"] }
+clap = { version = "4.5.20", features = ["derive"] }
+anyhow = "1.0.93"
+axum = { version = "^0.7.7", features = ["ws"] }
+arc-swap = "1.7.1"
+tokio = { version = "1.41.1", features = ["rt-multi-thread", "macros"] }
+notify = "7.0.0"
+async-channel = "2.3.1"
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
