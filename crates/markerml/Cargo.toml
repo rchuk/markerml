@@ -10,6 +10,6 @@ categories = ["parser-implementations", "web-programming", "template-engine", "c
 [dependencies]
 markerml_frontend = { path = "../markerml_frontend", version = "0.1.2" }
 markerml_middleend = { path = "../markerml_middleend", version = "0.1.0" }
-markerml_backend = { path = "../markerml_backend", version = "0.1.0" }
+markerml_backend = { path = "../markerml_backend", version = "0.1.1" }
 thiserror = "2.0.3"
 miette = { version = "7.2.0", features = ["derive"] }
