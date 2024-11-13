@@ -1,12 +1,13 @@
 [package]
 name = "markerml_frontend"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Ruslan Omelchuk"]
 description = "Frontend of simple markup and templating language, that is transpiled to HTML."
 license = "MIT"
 categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
 repository = "https://github.com/rchuk/markerml"
+documentation = "https://docs.rs/markerml_frontend/latest/markerml_frontend/"
 
 [dependencies]
 pest = { version = "2.7.14", features = ["miette-error"] }
