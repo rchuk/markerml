@@ -8,7 +8,7 @@ code to HTML. MarkerML stands for Marker Markup Language.
 It's a simple language for formatting and layouting
 text similar to HTML.
 
-Syntax is described in details on [docs.rs]("https://docs.rs/markerml/latest/markerml/").
+Syntax is described in details on [`docs.rs`]("https://docs.rs/markerml/latest/markerml/").
 
 ## Example
 ```markerml
