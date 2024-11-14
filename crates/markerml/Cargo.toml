@@ -1,6 +1,6 @@
 [package]
 name = "markerml"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Ruslan Omelchuk"]
 description = "Simple markup and templating language, that is transpiled to HTML."
