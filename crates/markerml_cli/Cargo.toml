@@ -6,6 +6,8 @@ authors = ["Ruslan Omelchuk"]
 description = "CLI for simple markup and templating language, that is transpiled to HTML."
 license = "MIT"
 categories = ["command-line-utilities", "parser-implementations", "web-programming", "template-engine", "compilers"]
+repository = "https://github.com/rchuk/markerml_cli"
+documentation = "https://docs.rs/markerml_cli/latest/markerml_cli/"
 
 [dependencies]
 markerml = { path = "../markerml", version = "0.1.1" }
