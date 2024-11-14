@@ -2,7 +2,7 @@
 //! for the MarkerML language.
 //!
 //! For the full grammar overview,
-//! refer to the [`markerml`]() crate.
+//! refer to the [`markerml`](https://crates.io/crates/markerml) crate.
 //!
 //! The resulting program provides several commands:
 //! - Command to convert file with MarkerML code into HTML

@@ -1,6 +1,6 @@
 [package]
 name = "markerml_frontend"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Ruslan Omelchuk"]
 description = "Frontend of simple markup and templating language, that is transpiled to HTML."

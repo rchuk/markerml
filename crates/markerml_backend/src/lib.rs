@@ -2,7 +2,7 @@
 //! backend for the MarkerML language.
 //!
 //! For the full grammar overview,
-//! refer to the [`markerml`]() crate.
+//! refer to the [`markerml`](https://crates.io/crates/markerml) crate.
 
 pub mod error;
 pub mod html_generator;
