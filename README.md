@@ -1,103 +1,47 @@
 # MarkerML
 
 ## About
-Simple markup and templating language, that is transpiled to HTML.
+MarkerML stands for Marker Markup Language.
+It's a simple language for formatting and layouting
+text similar to HTML.
 
-Code is split into multiple crates:
-- [markerml_cli]() - CLI for the MarkerMl
-- [markerml]() - top level library create
+## Technical Description
+
+Project is implemented using Rust.
+Parser is written using [pest](https://crates.io/crates/pest) library.
+[thiserror](https://crates.io/crates/thiserror) is used for library crates
+and [anyhow](https://crates.io/crates/anyhow) is used for cli and tests.
+[miette](https://crates.io/crates/miette) is used to display nice human-readable compilation errors.
+
+Code is split into two main crates:
+- [markerml_cli]() - CLI for the MarkerML
+- [markerml]() - top level library crate
+
+And a couple of auxiliary crates:
 - [markerml_backend]() - provides HTML generation
 - [markerml_middleend]() - provides Intermediate Representation
 - [markerml_frontend]() - provides parser 
 
-For complete grammar overview, refer to the [markerml crate]()
+First code is parsed from text into an Abstract Syntax Tree.
+Then it's converted into an intermediate representation to simplify
+further manipulations. It also catches some simple cases of semantic
+errors such as duplicated property names. Finally, this intermediate
+representation is used for generating HTML, which can be viewed in
+a regular browser.
 
-## Features
-**TODO**
+For a complete grammar overview, refer to the [markerml crate](https://docs.rs/markerml/0.1.2/markerml/).
 
-## Development
-
-Project is implemented using Rust.
-Parser is written using [pest](https://crates.io/crates/pest) library.
-
-## Examples
-
-### Page
-```
-page[
-    title="Sample page"
-] {
+## Example
+```markerml
+box {
+    header[1](Hello, world!)
+    paragraph(Some text)
     box[horizontal] {
-        @(Hello world)
-        @[bold](Bold text)
+        @(Wow)
     }
-    
-    box[direction = "vertical"] {
-        header[1](Welcome)
-        #["https://google.com"](Nice link)
-        header[level=2](Blah blah)
-        image["https://picsum.photos/id/237/200/300"]
-    }
-    
-    list[ordered] {
-        @(First item)
-        @(Second item)
-    }
-    
-    list[unordered] {
-        @(Something)
-        @(Something else)
-    }
-    
-    // By default box has vertical orientation
-    box {
-        paragraph(
-            Lorem ipsum dolor
-            sit amet
-        )
-        paragraph(
-            Different paragraph
-        )
-        some_component[a = "Text", b = "other text"] {
-            box {
-                @(abc)
-            }
-            box {
-                @(cde)
-            }
-        }
-        other_component {
-            @(Well)
-        }
-    }
-}
-```
-
-### Creating reusable component
-```
-component other_component[
-    child: slot
-] {
-    box[horizontal] {
-        ${child}
-        @(Hello)
-    }
-}
-```
-
-### Creating reusable component with multiple children
-```
-component some_component[
-    default a: string,
-    b: string = "abc",
-    children: slot[]
-] {
-    box[horizontal] {
-        @(${a //comments can also be used inside string interpolation})
-        @(${b})
-        list {
-            ${children}
-        }
+    box[vertical, x_align = "center"] {
+        @(Wow)
+        #["//www.google.com"](Link to google)
     }
 }
 ```
@@ -147,6 +91,73 @@ Properties:
 
 ## Grammar
 
+```
+WHITESPACE = _{ (" " | "\t" | NEWLINE)+ }
+
+COMMENT = _{ "//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+
+integer = @{ "-"? ~ ASCII_DIGIT+ }
+
+bool = @{ "true" | "false" }
+
+identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+literal_newline = @{ NEWLINE ~ (" " | "\t")* }
+
+string_literal_segment = @{ (!("$" | "\"" | NEWLINE) ~ ANY)+ }
+
+text_literal_segment = @{ (!("$" | ")" | NEWLINE) ~ ANY)+ }
+
+variable_interpolation = { "${" ~ identifier ~ "}" }
+
+string_segment = ${ literal_newline | variable_interpolation | string_literal_segment }
+
+text_segment = ${ literal_newline | variable_interpolation | text_literal_segment }
+
+string = @{ "\"" ~ string_segment* ~ "\"" }
+
+text = @{ "(" ~ text_segment* ~ ")" }
+
+value = { variable_interpolation | bool | string | integer }
+
+component_name = { "@" | "#" | identifier }
+
+default_property = { value }
+
+named_property = { identifier ~ "=" ~ value }
+
+flag_property = { identifier }
+
+property = { named_property | flag_property }
+
+properties_list = _{ property ~ ("," ~ property)* }
+
+properties = { "[" ~ (properties_list | (default_property ~ ("," ~ properties_list)?))?  ~ ","? ~ "]" }
+
+children = { "{" ~ component* ~ "}" }
+
+component = { component_name ~ properties? ~ children? ~ text? }
+
+ty = @{ "string" | "int" | "bool" | "slot[]" | "slot" }
+
+default_property_definition = { "default" ~ identifier ~ ":" ~ ty }
+
+text_property_definition = { "text" ~ identifier }
+
+named_property_definition = { identifier ~ ":" ~ ty ~ ("=" ~ value)? }
+
+property_definition = { default_property_definition | text_property_definition | named_property_definition }
+
+properties_definition_list = _{ property_definition ~ ("," ~ property_definition)* }
+
+properties_definition = { "[" ~ properties_definition_list? ~ "]" }
+
+component_definition = { "component" ~ identifier ~ properties_definition? ~ children? }
+
+module_item = _{ component_definition | component }
+
+module = { SOI ~ module_item* ~ EOI}
+```
 
 ### Component instantiation
 
@@ -695,5 +706,3 @@ graph LR;
 ### Miscellaneous
 
 #### Comment
-
-**TODO**
