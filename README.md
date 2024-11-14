@@ -551,8 +551,6 @@ graph LR;
         
         any[any codepoint except &quot, $, \]
         dollar(($))
-        backslash((\))
-        escaped_dollar(($))
         curly_open(("{"))
         curly_close(("}")) 
         identifier
@@ -566,7 +564,6 @@ graph LR;
     content_start --> any
     content_start --> dollar
     content_start --> close
-    content_start --> backslash
     
     any ---> content_end
     dollar --> curly_open
@@ -575,9 +572,6 @@ graph LR;
     identifier --> curly_close
     curly_close --> content_end
     
-    backslash --> escaped_dollar
-    escaped_dollar ----> content_end
-    backslash --> content_end
     
     content_end --> content_start
     content_end --> close
@@ -598,10 +592,8 @@ graph LR;
     START(( ))
     END(( ))
    
-    any["any codepoint except ), $, \"]
+    any["any codepoint except ), $"]
     dollar(($))
-    backslash((\))
-    escaped_dollar(($))
     curly_open(("{"))
     curly_close(("}")) 
     identifier
@@ -613,18 +605,13 @@ graph LR;
     START --> any
     START --> dollar
     START --> END
-    START --> backslash
-    
+
     any ---> END
     dollar --> curly_open
     
     curly_open --> identifier
     identifier --> curly_close
     curly_close --> END
-    
-    backslash --> escaped_dollar
-    escaped_dollar ----> END
-    backslash --> END
     
     END --> START
     
@@ -634,7 +621,6 @@ graph LR;
 
 #### Identifier
 
-Parsing occurs according to [Unicode Standard Annex #31](https://www.unicode.org/reports/tr31/#D1).
 ```mermaid
 ---
 title: identifier
@@ -646,8 +632,8 @@ graph LR;
     END(( ))
     
     underscore(("_"))
-    start(XID_Start)
-    continue(XID_Continue)
+    start(ascii alphabetic)
+    continue(ascii alphanumeric)
     
     %% 
     START1 --> START
@@ -684,6 +670,9 @@ graph LR;
     bool
     integer
     identifier
+    dollar(($))
+    open(("{"))
+    close(("}"))
     
     %% 
     START1 --> START
@@ -692,17 +681,49 @@ graph LR;
     START --> string
     START --> bool
     START --> integer
-    START --> identifier
+    START --> dollar
     
-    string --> END
-    bool --> END
-    integer --> END
-    identifier --> END
+    string ---> END
+    bool ---> END
+    integer ---> END
+    dollar ---> open
+    open --> identifier
+    identifier --> close
+    close --> END
     
     %% 
     END --> END1
 ```
 
-### Miscellaneous
-
 #### Comment
+```mermaid
+---
+title: comment
+---
+graph LR;
+    START1:::hidden
+    END1:::hidden
+    START(( ))
+    END(( ))
+    
+    slash0(("/"))
+    slash1(("/"))
+    any["Any symbol except newline"]
+    newline
+    
+    %% 
+    START1 --> START
+    
+    %% 
+    START --> slash0
+    slash0 --> slash1
+    
+    slash1 --> any
+    any --> any
+    any --> newline
+    
+    newline --> END
+    
+    %% 
+    END --> END1
+```
