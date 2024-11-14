@@ -506,7 +506,7 @@ graph LR;
     START(( ))
     END(( ))
     
-    minus(("-"))
+    minus(("—"))
     digit(("1..9"))
     single_zero((0))
     zero((0))
