@@ -6,6 +6,8 @@ authors = ["Ruslan Omelchuk"]
 description = "Simple markup and templating language, that is transpiled to HTML."
 license = "MIT"
 categories = ["parser-implementations", "web-programming", "template-engine", "compilers"]
+repository = "https://github.com/rchuk/markerml"
+documentation = "https://docs.rs/markerml/latest/markerml/"
 
 [dependencies]
 markerml_frontend = { path = "../markerml_frontend", version = "0.1.2" }
